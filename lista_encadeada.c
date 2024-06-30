@@ -1,15 +1,5 @@
-#include<stdio.h>
-
-struct no
-{
-    char pedido[30];
-    int tempo_bancada;
-    int tempo_cozinha;
-    struct no *proximo;
-} No;
-
-
-typedef struct no No;
+#include <stdio.h>
+#include "lista_encadeada.h"
 
 // Função para inserir um novo item na lista
 No *inserir(No *lista, char pedido[], int tempo_bancada, int tempo_cozinha) {
@@ -52,3 +42,4 @@ No *remover(No *lista, char pedido[]) {
 
   return lista;
 }
+

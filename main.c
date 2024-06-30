@@ -1,53 +1,102 @@
-#include<stdio.h>
-#include<pthread.h>
+#include <stdio.h>
+#include <pthread.h>
+#include <unistd.h>
+#include "interface.h"
+#include "lista_encadeada.h"
 #include<ncurses.h>
 
-void interface()
+int tempo_jogo = 60;
+
+pthread_mutex_t mut_temp;
+
+struct Configuracao
 {
-  attron(COLOR_PAIR(3));
+  int qtd_cozinheiros;
+  int qtd_bancadas;
+  int qtd_cozinhas;
+  No *pedidos;
+} configuracao;
 
-  move(eixo_x, eixo_y);
-  // Imprime a borda da caixa de texto
-  for (int i = 0; i < largura; i++) {
-    printw("-");
+void *temporizador()
+{
+  pthread_mutex_lock(&mut_temp);
+  while(tempo_jogo > 0)
+  {
+  sleep(1);
+  tempo_jogo = tempo_jogo - 1;
   }
-
-  move(eixo_y + 1, eixo_x);
-  printw("|");
-
-  move(eixo_y + altura - 1, eixo_x);
-  printw("|");
-
-  for (int i = 0; i < largura; i++) {
-    printw("-");
+  pthread_mutex_unlock(&mut_temp);
+  return NULL;
+}
+void *interface(void *configuracao)
+{
+  initscr();	
+  struct Configuracao *config = (struct Configuracao *)configuracao;
+  lista_pedidos(config->pedidos);
+  for (int i = 1; i <= config->qtd_bancadas; i++)
+  {
+    cria_bancada(i);
   }
-
-  // Move o cursor para o centro da caieixo_xa de teeixo_xto
-  move(eixo_y + altura / 2, eixo_x + largura / 2 - strlen(texto) / 2);
-
-  // Imprime o textoo dentro da caieixo_xa de textoo
-  printw("%s", texto);
-
-  // Define a cor de fundo para preto
-  attroff(COLOR_PAIR(3));
+  for (int i = 1; i <= config->qtd_cozinhas; i++)
+  {
+    cria_cozinha(i);
+  }
+  refresh();
+  return NULL;
 }
 
 int main()
 {
-  int qtd_cozinheiros, qtd_bancadas;
+  printf("Informe a quantidade de cozinheiros: ");
+  scanf("%d", &configuracao.qtd_cozinheiros);
 
-  pthread_t interface_thread, entrada_thread;
+  printf("\nInforme a quantidade de bancadas: ");
+  scanf("%d", &configuracao.qtd_bancadas);
 
-  printf("Informe quantidade de cozinheiros:");
-  scanf("%d", &qtd_cozinheiros);
-  printf("Informe quantidade de bancadas:");
-  scanf("%d", qtd_bancadas);
-
-  pthread_create(&interface_thread, NULL, interface, NULL);
-  for (int i = 0; i <qtd_cozinheiros; i++)
+  printf("\nInforme a quantidade de cozinhas: ");
+  scanf("%d", &configuracao.qtd_cozinhas);
+  No *lista = NULL;
+  int ped;
+  for (int i = 0; i < 10; i++)
   {
-    pthread_create
+    ped = (rand() % 5) + 1;
+    switch (ped)
+    {
+    case 1:
+      lista = inserir(lista, "Hamburguer", 5, 10);
+      break;
+    case 2:
+      lista = inserir(lista, "Pizza", 4, 8);
+      break;
+    case 3:
+      lista = inserir(lista, "salada", 4, 1);
+      break;
+    case 4:
+      lista = inserir(lista, "suco", 2, 2);
+      break;
+    case 5:
+      lista = inserir(lista, "macarrão", 6, 8);
+      break;
+    default:
+      break;
+    }
   }
+  configuracao.pedidos = lista;
 
-
+  pthread_t tela;
+  initscr();
+  raw();
+  noecho();	
+  pthread_create(&tela, NULL, interface, (void *)&configuracao);
+  pthread_join(tela, NULL); // Aguarda a finalização da thread 'tela'
+  while(true)
+  {
+    pthread_mutex_lock(&mut_temp);
+    if(tempo_jogo == 0)
+    {
+      endwin();
+      return 0;
+    }
+    pthread_mutex_unlock(&mut_temp);
+  }
 }
