@@ -7,6 +7,7 @@
 
 int tempo_jogo = 60;
 
+pthread_mutex_t mut_temp;
 
 struct Configuracao
 {
@@ -16,14 +17,32 @@ struct Configuracao
   No *pedidos;
 } configuracao;
 
-void *temporizador()
-{
-  while(tempo_jogo > 0)
-  {
-  sleep(1);
-  tempo_jogo = tempo_jogo - 1;
-  }
-  return NULL;
+void *temporizador(void *arg) {
+    WINDOW *temporizador = (WINDOW *)arg;
+    int altura_tela, largura_tela;
+    getmaxyx(stdscr, altura_tela, largura_tela);
+    int altura_temp = 3; 
+    int largura_temp = 15; 
+    int starty = 1;  
+    int startx = largura_tela - largura_temp - 1;
+
+    temporizador = newwin(altura_temp, largura_temp, starty, startx);
+    box(temporizador, 0, 0);
+
+    while (tempo_jogo > 0) {
+        sleep(1);
+        pthread_mutex_lock(&mut_temp);
+        tempo_jogo--;
+        pthread_mutex_unlock(&mut_temp);
+
+        werase(temporizador);
+        box(temporizador, 0, 0);
+        mvwprintw(temporizador, 1, 2, "TEMPO: %d", tempo_jogo);
+        wrefresh(temporizador);
+    }
+    
+    delwin(temporizador);
+    return NULL;
 }
 void *interface(void *configuracao)
 {
@@ -80,12 +99,14 @@ int main()
   }
   configuracao.pedidos = lista;
 
-  pthread_t tela;
+  pthread_t thread_tela, thread_temporizador;
   initscr();
   raw();
   noecho();	
-  pthread_create(&tela, NULL, interface, (void *)&configuracao);
-  pthread_join(tela, NULL); // Aguarda a finalização da thread 'tela'
+  pthread_create(&thread_tela, NULL, interface, (void *)&configuracao);
+  pthread_create(&thread_temporizador, NULL, temporizador, NULL);
+  pthread_join(thread_tela, NULL);
+  pthread_join(thread_temporizador, NULL);
   while(true)
   {
     if(tempo_jogo == 0)
