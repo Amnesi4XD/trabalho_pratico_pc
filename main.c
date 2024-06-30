@@ -7,7 +7,6 @@
 
 int tempo_jogo = 60;
 
-pthread_mutex_t mut_temp;
 
 struct Configuracao
 {
@@ -19,13 +18,11 @@ struct Configuracao
 
 void *temporizador()
 {
-  pthread_mutex_lock(&mut_temp);
   while(tempo_jogo > 0)
   {
   sleep(1);
   tempo_jogo = tempo_jogo - 1;
   }
-  pthread_mutex_unlock(&mut_temp);
   return NULL;
 }
 void *interface(void *configuracao)
@@ -91,12 +88,10 @@ int main()
   pthread_join(tela, NULL); // Aguarda a finalização da thread 'tela'
   while(true)
   {
-    pthread_mutex_lock(&mut_temp);
     if(tempo_jogo == 0)
     {
       endwin();
-      return 0;
     }
-    pthread_mutex_unlock(&mut_temp);
   }
+  return 0;
 }
