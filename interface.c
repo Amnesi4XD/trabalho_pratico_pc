@@ -44,51 +44,50 @@ void atualizar_pedidos(WINDOW *tela, No *inicio)
     wrefresh(tela);
 }
 
-void cria_bancada(WINDOW *tela, int num_bancada) {
-    int largura = 12;
+void cria_bancada(int num_bancada) {
+    int largura = 14;
     int altura = 5;
-    int X = (num_bancada - 1) * largura;
-    int Y = 0;
-    int alturaTela, larguraTela;
-    getmaxyx(tela, alturaTela, larguraTela); 
+    int X = 35 + (num_bancada - 1) * largura;
+    int Y = 2;
 
-    mvwvline(tela, Y, X, 0, altura);
-    mvwvline(tela, Y, X + largura - 1, 0, altura);
-    mvwhline(tela, Y, X, 0, largura);
-    mvwhline(tela, Y + altura - 1, X, 0, largura);
-    mvwaddch(tela, Y, X, ACS_ULCORNER);
-    mvwaddch(tela, Y, X + largura - 1, ACS_URCORNER);
-    mvwaddch(tela, Y + altura - 1, X, ACS_LLCORNER);
-    mvwaddch(tela, Y + altura - 1, X + largura - 1, ACS_LRCORNER);
+    mvhline(Y, X, 0, largura);
+    mvhline(Y + altura - 1, X, 0, largura);
+    mvvline(Y, X, 0, altura);
+    mvvline(Y, X + largura - 1, 0, altura);
+    mvaddch(Y, X, ACS_ULCORNER);
+    mvaddch(Y, X + largura - 1, ACS_URCORNER);
+    mvaddch(Y + altura - 1, X, ACS_LLCORNER);
+    mvaddch(Y + altura - 1, X + largura - 1, ACS_LRCORNER);
 
     char etiqueta[20];
-    sprintf(etiqueta, "Bancada %d", num_bancada);
-    mvwprintw(tela, Y + altura / 2, X + (largura - strlen(etiqueta)) / 2, "%s", etiqueta);
+    sprintf(etiqueta, "bancada %d", num_bancada);
+    mvprintw(Y + altura / 2 + 1, X + (largura - strlen(etiqueta)) / 2, "%s", etiqueta);
 
-    wrefresh(tela);
+    refresh();
 }
 
-void cria_cozinha(WINDOW *tela, int num_cozinha) {
-    int largura = 12;
+void cria_cozinha(int num_cozinha) {
+    int largura = 14;
     int altura = 5;
-    int X = (num_cozinha - 1) * largura;
+    int X = 35 + (num_cozinha - 1) * largura;
     int alturaTela, larguraTela;
-    getmaxyx(tela, alturaTela, larguraTela); 
+    getmaxyx(stdscr, alturaTela, larguraTela);
     int Y = alturaTela - 15;
 
-    mvwvline(tela, Y, X, 0, altura);
-    mvwvline(tela, Y, X + largura - 1, 0, altura);
-    mvwhline(tela, Y, X, 0, largura);
-    mvwhline(tela, Y + altura - 1, X, 0, largura);
-    mvwaddch(tela, Y, X, ACS_ULCORNER);
-    mvwaddch(tela, Y, X + largura - 1, ACS_URCORNER);
-    mvwaddch(tela, Y + altura - 1, X, ACS_LLCORNER);
-    mvwaddch(tela, Y + altura - 1, X + largura - 1, ACS_LRCORNER);
+    mvhline(Y, X, 0, largura);
+    mvhline(Y + altura - 1, X, 0, largura);
+    mvvline(Y, X, 0, altura);
+    mvvline(Y, X + largura - 1, 0, altura);
+    mvaddch(Y, X, ACS_ULCORNER);
+    mvaddch(Y, X + largura - 1, ACS_URCORNER);
+    mvaddch(Y + altura - 1, X, ACS_LLCORNER);
+    mvaddch(Y + altura - 1, X + largura - 1, ACS_LRCORNER);
 
     char etiqueta[20];
-    sprintf(etiqueta, "Cozinha %d", num_cozinha);
-    mvwprintw(tela, Y + altura / 2, X + (largura - strlen(etiqueta)) / 2, "%s", etiqueta);
+    sprintf(etiqueta, "cozinha %d", num_cozinha);
+    mvprintw(Y + altura / 2, X + (largura - strlen(etiqueta)) / 2, "%s", etiqueta);
 
-    wrefresh(tela);
+    refresh();
 }
+
 

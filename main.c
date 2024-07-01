@@ -28,8 +28,6 @@ struct Configuracao
   int pontuacao_total;
   No *pedidos;
   WINDOW *tela_pedidos;
-  WINDOW *tela_cozinhas;
-  WINDOW *tela_bancadas;
 } configuracao;
 
 int busca_bancada_disponivel()
@@ -89,7 +87,7 @@ void *cozinhar(void **args)
   {
     indice_bancada_disponivel = busca_bancada_disponivel();
   }
-
+  mvprintw(2, 4, (35 + indice_bancada_disponivel - 1) * 14 + (14 - strlen("Cozinheiro n")) / 2, "Cozinheiro");
   sleep(pedido->tempo_bancada);
   ingredientes[indice_bancada_disponivel].status = DISPONIVEL;
 
@@ -190,12 +188,12 @@ void *interface(void *configuracao)
 
   for (int i = 1; i <= config->qtd_bancadas; i++)
   {
-    cria_bancada(config->tela_bancadas, i);
+    cria_bancada(i);
   }
 
   for (int i = 1; i <= config->qtd_cozinhas; i++)
   {
-    cria_cozinha(config->tela_cozinhas, i);
+    cria_cozinha(i);
   }
   lista_pedidos(config->tela_pedidos, config->pedidos);
 
@@ -225,8 +223,6 @@ int main()
   noecho();
 
   configuracao.tela_pedidos = newwin(30, 20, 2, 2);
-  configuracao.tela_bancadas = newwin(15, configuracao.qtd_bancadas * 11, 2, 35);
-  configuracao.tela_cozinhas = newwin(15, configuracao.qtd_cozinhas * 11, 25, 35);
 
   // Threads
   pthread_t thread_tela, thread_temporizador, thread_add_pedidos;
