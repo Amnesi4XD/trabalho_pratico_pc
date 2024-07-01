@@ -9,11 +9,21 @@ typedef struct no {
     char pedido[30];
     int tempo_bancada;
     int tempo_cozinha;
+    int pontos;
     struct no *proximo;
 } No;
 
+typedef struct bancada{
+    char entra_pedido[64];
+    int status;
+}Bancada;
+
+typedef struct cozinheiro{
+    char pedido_atual[64];
+}Cozinheiro;
+
 // Função para inserir um novo item na lista
-No *inserir(No *lista, char pedido[], int tempo_bancada, int tempo_cozinha);
+No *inserir(No *lista, char pedido[], int tempo_bancada, int tempo_cozinha, int pontos);
 
 // Função para contar o número de itens na lista
 int count(No *lista);

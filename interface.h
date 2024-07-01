@@ -4,16 +4,9 @@
 #include <ncurses.h>
 #include "lista_encadeada.h"
 
-// Função para listar os pedidos
-void lista_pedidos(No *inicio);
+void lista_pedidos(WINDOW *tela, No *inicio);
+void atualizar_pedidos(WINDOW *tela, No *inicio);
+void cria_bancada(WINDOW *tela, int num_bancada);
+void cria_cozinha(WINDOW *tela, int num_cozinha);
 
-// Função para atualizar os pedidos
-void atualizar_pedidos(No *inicio);
-
-// Função para desenhar as bancadas
-void cria_bancada(int num_bancada);
-
-// Função para desenhar a cozinha
-void cria_cozinha(int num_cozinha);
-
-#endif // INTERFACE_H
+#endif 

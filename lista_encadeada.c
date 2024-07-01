@@ -1,17 +1,29 @@
 #include <stdio.h>
 #include "lista_encadeada.h"
 
-// Função para inserir um novo item na lista
-No *inserir(No *lista, char pedido[], int tempo_bancada, int tempo_cozinha) {
-  No *novo = (No *)malloc(sizeof(No));
-  strcpy(novo->pedido, pedido);
-  novo->tempo_bancada = tempo_bancada;
-  novo->tempo_cozinha = tempo_cozinha;
-  novo->proximo = lista;
-  return novo;
+No *inserir(No *lista, char pedido[], int tempo_bancada, int tempo_cozinha, int pontos) {
+    No *novo = (No *)malloc(sizeof(No));
+    No *atual = lista;
+    novo->proximo = NULL;
+    strcpy(novo->pedido, pedido);
+    novo->tempo_bancada = tempo_bancada;
+    novo->tempo_cozinha = tempo_cozinha;
+    novo->pontos = pontos;
+
+    if (lista == NULL) {
+        return novo;
+    }
+
+    while (atual->proximo != NULL) {
+        atual = atual->proximo;
+    }
+
+    atual->proximo = novo;
+
+    return lista;
 }
 
-// Função para contar o número de itens na lista
+
 int count(No *lista) {
   int contador = 0;
   while (lista != NULL) {
@@ -21,7 +33,6 @@ int count(No *lista) {
   return contador;
 }
 
-// Função para remover um item da lista
 No *remover(No *lista, char pedido[]) {
   No *anterior = NULL;
   No *atual = lista;

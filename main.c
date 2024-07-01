@@ -3,61 +3,204 @@
 #include <unistd.h>
 #include "interface.h"
 #include "lista_encadeada.h"
-#include<ncurses.h>
+
+#define DISPONIVEL 0
+#define OCUPADO 1
+#define NAO_ENCONTRADO 99
 
 int tempo_jogo = 60;
 
-pthread_mutex_t mut_temp;
+No *lista = NULL;
+
+pthread_mutex_t lock_pedidos;
+pthread_mutex_t lock_temp;
+pthread_mutex_t lock_bancadas;
+pthread_mutex_t lock_cozinhas;
+Bancada *ingredientes;
+Bancada *cozinhas;
+Cozinheiro *cozinheiros;
 
 struct Configuracao
 {
   int qtd_cozinheiros;
   int qtd_bancadas;
   int qtd_cozinhas;
+  int pontuacao_total;
   No *pedidos;
+  WINDOW *tela_pedidos;
+  WINDOW *tela_cozinhas;
+  WINDOW *tela_bancadas;
 } configuracao;
 
-void *temporizador(void *arg) {
-    WINDOW *temporizador = (WINDOW *)arg;
-    int altura_tela, largura_tela;
-    getmaxyx(stdscr, altura_tela, largura_tela);
-    int altura_temp = 3; 
-    int largura_temp = 15; 
-    int starty = 1;  
-    int startx = largura_tela - largura_temp - 1;
-
-    temporizador = newwin(altura_temp, largura_temp, starty, startx);
-    box(temporizador, 0, 0);
-
-    while (tempo_jogo > 0) {
-        sleep(1);
-        pthread_mutex_lock(&mut_temp);
-        tempo_jogo--;
-        pthread_mutex_unlock(&mut_temp);
-
-        werase(temporizador);
-        box(temporizador, 0, 0);
-        mvwprintw(temporizador, 1, 2, "TEMPO: %d", tempo_jogo);
-        wrefresh(temporizador);
+int busca_bancada_disponivel()
+{
+  pthread_mutex_lock(&lock_bancadas);
+  for (int i = 0; i < configuracao.qtd_bancadas; i++)
+  {
+    if (ingredientes[i].status == DISPONIVEL)
+    {
+      ingredientes[i].status = OCUPADO;
+      pthread_mutex_unlock(&lock_bancadas);
+      return i;
     }
-    
-    delwin(temporizador);
-    return NULL;
+  }
+  pthread_mutex_unlock(&lock_bancadas);
+  return NAO_ENCONTRADO;
 }
+
+int busca_cozinha_disponivel()
+{
+  pthread_mutex_lock(&lock_cozinhas);
+  for (int i = 0; i < configuracao.qtd_cozinhas; i++)
+  {
+    if (cozinhas[i].status == DISPONIVEL)
+    {
+      cozinhas[i].status = OCUPADO;
+      pthread_mutex_unlock(&lock_cozinhas);
+      return i;
+    }
+  }
+  pthread_mutex_unlock(&lock_cozinhas);
+  return NAO_ENCONTRADO;
+}
+
+No *busca_no_pedido(No *no_atual, char *nome_do_pedido)
+{
+  while (no_atual != NULL)
+  {
+    if (!strcmp(no_atual->pedido, nome_do_pedido))
+    {
+      return no_atual;
+    }
+    no_atual = no_atual->proximo;
+  }
+  return NULL;
+}
+
+void *cozinhar(void **args)
+{
+  No *lista = (No *)args[0];
+  Cozinheiro *cozinheiro = (Cozinheiro *)args[1];
+  int indice_bancada_disponivel;
+  int indice_cozinha_disponivel;
+  No *pedido = busca_no_pedido(lista, cozinheiro->pedido_atual);
+
+  while (indice_bancada_disponivel != DISPONIVEL)
+  {
+    indice_bancada_disponivel = busca_bancada_disponivel();
+  }
+
+  sleep(pedido->tempo_bancada);
+  ingredientes[indice_bancada_disponivel].status = DISPONIVEL;
+
+  while (indice_cozinha_disponivel != DISPONIVEL)
+  {
+    indice_cozinha_disponivel = busca_cozinha_disponivel();
+  }
+
+  sleep(pedido->tempo_cozinha);
+  cozinhas[indice_cozinha_disponivel].status = DISPONIVEL;
+
+  configuracao.pontuacao_total += pedido->pontos;
+
+  remover(lista, pedido->pedido);
+
+  return NULL;
+}
+
+void *adiciona_pedidos(void *arg)
+{
+  sleep(5);
+  struct Configuracao *config = (struct Configuracao *)arg;
+  No *lista = config->pedidos;
+
+  while (1)
+  {
+    pthread_mutex_lock(&lock_pedidos);
+
+    if (count(lista) < 14)
+    {
+      int pedido = (rand() % 5) + 1;
+      switch (pedido)
+      {
+      case 1:
+        lista = inserir(lista, "Hamburguer", 5, 10, 10);
+        break;
+      case 2:
+        lista = inserir(lista, "Pizza", 4, 8, 10);
+        break;
+      case 3:
+        lista = inserir(lista, "Salada", 4, 1, 6);
+        break;
+      case 4:
+        lista = inserir(lista, "Suco", 2, 2, 5);
+        break;
+      case 5:
+        lista = inserir(lista, "Macarrao", 6, 8, 8);
+        break;
+      default:
+        break;
+      }
+    }
+
+    atualizar_pedidos(config->tela_pedidos, lista);
+
+    pthread_mutex_unlock(&lock_pedidos);
+
+    int sleep_time = (rand() % 6) + 5;
+    sleep(sleep_time);
+  }
+
+  return NULL;
+}
+
+void *temporizador(void *arg)
+{
+  WINDOW *temporizador = (WINDOW *)arg;
+  int altura_tela, largura_tela;
+  getmaxyx(stdscr, altura_tela, largura_tela);
+  int altura_temp = 3;
+  int largura_temp = 15;
+  int starty = 1;
+  int startx = largura_tela - largura_temp - 1;
+
+  temporizador = newwin(altura_temp, largura_temp, starty, startx);
+  box(temporizador, 0, 0);
+
+  while (tempo_jogo > 0)
+  {
+    sleep(1);
+    pthread_mutex_lock(&lock_temp);
+    tempo_jogo--;
+    pthread_mutex_unlock(&lock_temp);
+
+    werase(temporizador);
+    box(temporizador, 0, 0);
+    mvwprintw(temporizador, 1, 2, "TEMPO: %d", tempo_jogo);
+    wrefresh(temporizador);
+  }
+
+  delwin(temporizador);
+  return NULL;
+}
+
 void *interface(void *configuracao)
 {
-  initscr();	
   struct Configuracao *config = (struct Configuracao *)configuracao;
-  lista_pedidos(config->pedidos);
+
   for (int i = 1; i <= config->qtd_bancadas; i++)
   {
-    cria_bancada(i);
+    cria_bancada(config->tela_bancadas, i);
   }
+
   for (int i = 1; i <= config->qtd_cozinhas; i++)
   {
-    cria_cozinha(i);
+    cria_cozinha(config->tela_cozinhas, i);
   }
+  lista_pedidos(config->tela_pedidos, config->pedidos);
+
   refresh();
+
   return NULL;
 }
 
@@ -71,48 +214,40 @@ int main()
 
   printf("\nInforme a quantidade de cozinhas: ");
   scanf("%d", &configuracao.qtd_cozinhas);
-  No *lista = NULL;
-  int ped;
-  for (int i = 0; i < 10; i++)
-  {
-    ped = (rand() % 5) + 1;
-    switch (ped)
-    {
-    case 1:
-      lista = inserir(lista, "Hamburguer", 5, 10);
-      break;
-    case 2:
-      lista = inserir(lista, "Pizza", 4, 8);
-      break;
-    case 3:
-      lista = inserir(lista, "salada", 4, 1);
-      break;
-    case 4:
-      lista = inserir(lista, "suco", 2, 2);
-      break;
-    case 5:
-      lista = inserir(lista, "macarrão", 6, 8);
-      break;
-    default:
-      break;
-    }
-  }
+
+  pthread_mutex_init(&lock_pedidos, NULL);
+  pthread_mutex_init(&lock_temp, NULL);
+
   configuracao.pedidos = lista;
 
-  pthread_t thread_tela, thread_temporizador;
   initscr();
   raw();
-  noecho();	
+  noecho();
+
+  configuracao.tela_pedidos = newwin(30, 20, 2, 2);
+  configuracao.tela_bancadas = newwin(15, configuracao.qtd_bancadas * 11, 2, 35);
+  configuracao.tela_cozinhas = newwin(15, configuracao.qtd_cozinhas * 11, 25, 35);
+
+  // Threads
+  pthread_t thread_tela, thread_temporizador, thread_add_pedidos;
+
+  // Criação das threads
   pthread_create(&thread_tela, NULL, interface, (void *)&configuracao);
   pthread_create(&thread_temporizador, NULL, temporizador, NULL);
+  pthread_create(&thread_add_pedidos, NULL, adiciona_pedidos, (void *)&configuracao);
+
   pthread_join(thread_tela, NULL);
   pthread_join(thread_temporizador, NULL);
-  while(true)
+  pthread_join(thread_add_pedidos, NULL);
+
+  // Aguarda o tempo do jogo
+  while (tempo_jogo > 0)
   {
-    if(tempo_jogo == 0)
+    if (tempo_jogo == 0)
     {
-      endwin();
+      endwin(); // Finaliza o NCurses
     }
   }
+
   return 0;
 }
