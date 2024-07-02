@@ -3,7 +3,6 @@
 
 No *inserir(No *lista, char pedido[], int tempo_bancada, int tempo_cozinha, int pontos) {
     No *novo = (No *)malloc(sizeof(No));
-    No *atual = lista;
     novo->proximo = NULL;
     strcpy(novo->pedido, pedido);
     novo->tempo_bancada = tempo_bancada;
@@ -14,6 +13,7 @@ No *inserir(No *lista, char pedido[], int tempo_bancada, int tempo_cozinha, int 
         return novo;
     }
 
+    No *atual = lista;
     while (atual->proximo != NULL) {
         atual = atual->proximo;
     }
@@ -22,6 +22,7 @@ No *inserir(No *lista, char pedido[], int tempo_bancada, int tempo_cozinha, int 
 
     return lista;
 }
+
 
 
 int count(No *lista) {

@@ -44,8 +44,9 @@ void atualizar_pedidos(WINDOW *tela, No *inicio)
     wrefresh(tela);
 }
 
-void cria_bancada(int num_bancada) {
-    int largura = 14;
+void cria_bancada(int num_bancada)
+{
+    int largura = 15;
     int altura = 5;
     int X = 35 + (num_bancada - 1) * largura;
     int Y = 2;
@@ -61,18 +62,19 @@ void cria_bancada(int num_bancada) {
 
     char etiqueta[20];
     sprintf(etiqueta, "bancada %d", num_bancada);
-    mvprintw(Y + altura / 2 + 1, X + (largura - strlen(etiqueta)) / 2, "%s", etiqueta);
+    mvprintw(Y + altura / 2 - 1, X + (largura - strlen(etiqueta)) / 2, "%s", etiqueta);
 
     refresh();
 }
 
-void cria_cozinha(int num_cozinha) {
-    int largura = 14;
+void cria_cozinha(int num_cozinha)
+{
+    int largura = 15;
     int altura = 5;
     int X = 35 + (num_cozinha - 1) * largura;
     int alturaTela, larguraTela;
     getmaxyx(stdscr, alturaTela, larguraTela);
-    int Y = alturaTela - 15;
+    int Y = alturaTela - 23;
 
     mvhline(Y, X, 0, largura);
     mvhline(Y + altura - 1, X, 0, largura);
@@ -85,9 +87,35 @@ void cria_cozinha(int num_cozinha) {
 
     char etiqueta[20];
     sprintf(etiqueta, "cozinha %d", num_cozinha);
-    mvprintw(Y + altura / 2, X + (largura - strlen(etiqueta)) / 2, "%s", etiqueta);
+    mvprintw(Y + altura / 2 - 1, X + (largura - strlen(etiqueta)) / 2, "%s", etiqueta);
 
     refresh();
 }
 
+void cria_box_cozinheiros(int num_cozinheiros)
+{
+    int largura = 15;
+    int altura = 5;
+    int alturaTela, larguraTela;
+    getmaxyx(stdscr, alturaTela, larguraTela);
 
+    int X = 48;
+    int Y = 15;
+
+    mvhline(Y, X, 0, largura);
+    mvhline(Y + altura - 1, X, 0, largura);
+    mvvline(Y, X, 0, altura);
+    mvvline(Y, X + largura - 1, 0, altura);
+    mvaddch(Y, X, ACS_ULCORNER);
+    mvaddch(Y, X + largura - 1, ACS_URCORNER);
+    mvaddch(Y + altura - 1, X, ACS_LLCORNER);
+    mvaddch(Y + altura - 1, X + largura - 1, ACS_LRCORNER);
+
+    for (int i = 1; i <= num_cozinheiros; i++) {
+        char etiqueta[20];
+        sprintf(etiqueta, "Cozinheiro %d", i);
+        mvprintw(Y + 1 , X + 1, "%s", etiqueta);
+        Y++;
+    }
+    refresh();
+}

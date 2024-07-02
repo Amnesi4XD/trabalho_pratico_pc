@@ -18,10 +18,6 @@ typedef struct bancada{
     int status;
 }Bancada;
 
-typedef struct cozinheiro{
-    char pedido_atual[64];
-}Cozinheiro;
-
 // Função para inserir um novo item na lista
 No *inserir(No *lista, char pedido[], int tempo_bancada, int tempo_cozinha, int pontos);
 
