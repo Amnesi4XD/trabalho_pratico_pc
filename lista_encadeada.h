@@ -2,8 +2,9 @@
 #define LISTA_ENCADEADA_H
 
 #include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
+#include<pthread.h>
+#include<stdlib.h>
+#include<string.h>
 
 typedef struct no {
     char pedido[30];

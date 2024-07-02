@@ -1,7 +1,9 @@
-#include <stdio.h>
 #include "lista_encadeada.h"
 
-No *inserir(No *lista, char pedido[], int tempo_bancada, int tempo_cozinha, int pontos) {
+pthread_mutex_t lock_pedidos;
+
+No *inserir(No *lista, char pedido[], int tempo_bancada, int tempo_cozinha, int pontos)
+{
     No *novo = (No *)malloc(sizeof(No));
     novo->proximo = NULL;
     strcpy(novo->pedido, pedido);
@@ -9,12 +11,14 @@ No *inserir(No *lista, char pedido[], int tempo_bancada, int tempo_cozinha, int 
     novo->tempo_cozinha = tempo_cozinha;
     novo->pontos = pontos;
 
-    if (lista == NULL) {
+    if (lista == NULL)
+    {
         return novo;
     }
 
     No *atual = lista;
-    while (atual->proximo != NULL) {
+    while (atual->proximo != NULL)
+    {
         atual = atual->proximo;
     }
 
@@ -23,39 +27,46 @@ No *inserir(No *lista, char pedido[], int tempo_bancada, int tempo_cozinha, int 
     return lista;
 }
 
-
-
-int count(No *lista) {
-  int contador = 0;
-  while (lista != NULL) {
-    contador++;
-    lista = lista->proximo;
-  }
-  return contador;
+int count(No *lista)
+{
+    pthread_mutex_lock(&lock_pedidos);
+    int contador = 0;
+    while (lista != NULL)
+    {
+        contador++;
+        lista = lista->proximo;
+    }
+    pthread_mutex_unlock(&lock_pedidos);
+    return contador;
 }
 
-No *remover(No *lista, int indice_pedido) {
+No *remover(No *lista, int indice_pedido)
+{
     No *anterior = NULL;
     No *atual = lista;
     int contador = 0;
 
-    while (atual != NULL && contador < indice_pedido) {
+    while (atual != NULL && contador < indice_pedido)
+    {
         anterior = atual;
         atual = atual->proximo;
         contador++;
     }
 
-    if (atual == NULL) {
+    if (atual == NULL)
+    {
         return lista;
     }
 
-    if (anterior == NULL) {
+    if (anterior == NULL)
+    {
         lista = atual->proximo;
-    } else {
+    }
+    else
+    {
         anterior->proximo = atual->proximo;
     }
 
     free(atual);
     return lista;
 }
-

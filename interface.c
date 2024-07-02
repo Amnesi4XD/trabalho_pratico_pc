@@ -1,26 +1,14 @@
-#include <ncurses.h>
 #include "lista_encadeada.h"
 #include "interface.h"
 
-void lista_pedidos(WINDOW *tela, No *inicio)
+void lista_pedidos(WINDOW *tela)
 {
     int largura = 20;
     int altura = 30;
 
     tela = newwin(altura, largura, 2, 2);
     box(tela, 0, 0);
-    mvwprintw(tela, 1, (largura - strlen("PEDIDOS:")) / 2, "PEDIDOS");
-
-    No *atual = inicio;
-    int num_pedido = 1;
-    int y_pos = 3;
-    while (atual != NULL)
-    {
-        mvwprintw(tela, y_pos++, 2, "%d - %s", num_pedido, atual->pedido);
-        num_pedido++;
-        atual = atual->proximo;
-    }
-
+    mvwprintw(tela, 1, (largura - strlen("PEDIDOS:")) / 2, "PEDIDOS:");
     wrefresh(tela);
 }
 
