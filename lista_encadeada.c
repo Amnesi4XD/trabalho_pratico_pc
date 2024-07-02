@@ -34,24 +34,28 @@ int count(No *lista) {
   return contador;
 }
 
-No *remover(No *lista, char pedido[]) {
-  No *anterior = NULL;
-  No *atual = lista;
+No *remover(No *lista, int indice_pedido) {
+    No *anterior = NULL;
+    No *atual = lista;
+    int contador = 0;
 
-  while (atual != NULL && strcmp(atual->pedido, pedido) != 0) {
-    anterior = atual;
-    atual = atual->proximo;
-  }
-
-  if (atual != NULL) {
-    if (anterior == NULL) {
-      lista = atual->proximo;
-    } else {
-      anterior->proximo = atual->proximo;
+    while (atual != NULL && contador < indice_pedido) {
+        anterior = atual;
+        atual = atual->proximo;
+        contador++;
     }
-    free(atual);
-  }
 
-  return lista;
+    if (atual == NULL) {
+        return lista;
+    }
+
+    if (anterior == NULL) {
+        lista = atual->proximo;
+    } else {
+        anterior->proximo = atual->proximo;
+    }
+
+    free(atual);
+    return lista;
 }
 

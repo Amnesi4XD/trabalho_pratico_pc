@@ -17,26 +17,24 @@ pthread_mutex_t lock_pedidos;
 pthread_mutex_t lock_temp;
 pthread_mutex_t lock_bancadas;
 pthread_mutex_t lock_cozinhas;
+pthread_mutex_t lock_ordem[3];
 Bancada *ingredientes;
 Bancada *cozinhas;
-pthread_mutex_t *lock_cozinheiros;
-
+int ordem[3];
 struct Configuracao
 {
   int qtd_cozinheiros;
   int qtd_bancadas;
   int qtd_cozinhas;
   int pontuacao_total;
-  No *pedidos;
   WINDOW *tela_pedidos;
 } configuracao;
 
 typedef struct
 {
-  No *lista_pedidos;
-  int num_pedido;
+  int id_cozinheiro;
   WINDOW *tela;
-} ArgsThread;
+} Cozinheiro;
 
 int busca_bancada_disponivel()
 {
@@ -86,46 +84,63 @@ No *busca_no_pedido(No *no_atual, int indice_do_pedido)
   return NULL;
 }
 
-void *cozinhar(void *args)
+void *cozinheiros(void *args)
 {
-  ArgsThread *argumentos = (ArgsThread *)args;
-  No *lista = argumentos->lista_pedidos;
-  int num_pedido = argumentos->num_pedido;
-  WINDOW *tela = argumentos->tela;
-
+  int num_pedido;
   int indice_bancada_disponivel;
   int indice_cozinha_disponivel;
 
-  pthread_mutex_lock(&lock_pedidos);
-  No *pedido = busca_no_pedido(lista, num_pedido);
-  pthread_mutex_unlock(&lock_pedidos);
-
-  while (indice_bancada_disponivel != DISPONIVEL)
+  Cozinheiro *cozinheiro = (Cozinheiro *)args;
+  while (1)
   {
-    indice_bancada_disponivel = busca_bancada_disponivel();
+    for (int i = 0; i < 3; i++)
+    {
+      pthread_mutex_lock(&lock_ordem[i]);
+      if (cozinheiro->id_cozinheiro == i && ordem[i] != 0)
+      {
+        num_pedido = ordem[i];
+
+
+        pthread_mutex_lock(&lock_pedidos);
+        No *pedido = busca_no_pedido(lista, num_pedido);
+        pthread_mutex_unlock(&lock_pedidos);
+
+        while (indice_bancada_disponivel != DISPONIVEL)
+        {
+          indice_bancada_disponivel = busca_bancada_disponivel();
+        }
+
+        sleep(pedido->tempo_bancada);
+        ingredientes[indice_bancada_disponivel].status = DISPONIVEL;
+
+        while (indice_cozinha_disponivel != DISPONIVEL)
+        {
+          indice_cozinha_disponivel = busca_cozinha_disponivel();
+        }
+
+        sleep(pedido->tempo_cozinha);
+        cozinhas[indice_cozinha_disponivel].status = DISPONIVEL;
+
+        configuracao.pontuacao_total += pedido->pontos;
+
+        pthread_mutex_lock(&lock_pedidos);
+        remover(lista, num_pedido);
+
+
+        atualizar_pedidos(cozinheiro->tela, lista);
+        pthread_mutex_unlock(&lock_pedidos);
+
+        ordem[i] = 0;
+        pthread_mutex_unlock(&lock_ordem[i]);
+
+        return NULL;
+      }
+      else
+      {
+        pthread_mutex_unlock(&lock_ordem[i]);
+      }
+    }
   }
-
-  sleep(pedido->tempo_bancada);
-  ingredientes[indice_bancada_disponivel].status = DISPONIVEL;
-
-  while (indice_cozinha_disponivel != DISPONIVEL)
-  {
-    indice_cozinha_disponivel = busca_cozinha_disponivel();
-  }
-
-  sleep(pedido->tempo_cozinha);
-  cozinhas[indice_cozinha_disponivel].status = DISPONIVEL;
-
-  configuracao.pontuacao_total += pedido->pontos;
-
-  pthread_mutex_lock(&lock_pedidos);
-  remover(lista, pedido->pedido);
-  pthread_mutex_unlock(&lock_pedidos);
-
-  atualizar_pedidos(tela, lista);
-
-  free(argumentos);
-  return NULL;
 }
 
 void *gerente(void *arg)
@@ -136,14 +151,6 @@ void *gerente(void *arg)
   int input_num;
   int buffer[BUFFER_SIZE] = {0};
   int buffer_index = 0;
-
-  pthread_t *cozinheiro_thread = malloc(config->qtd_cozinheiros * sizeof(pthread_t));
-  pthread_mutex_t *lock_cozinheiros = malloc(config->qtd_cozinheiros * sizeof(pthread_mutex_t));
-
-  for (int i = 0; i < config->qtd_cozinheiros; i++)
-  {
-    pthread_mutex_init(&lock_cozinheiros[i], NULL);
-  }
 
   while (1)
   {
@@ -157,60 +164,36 @@ void *gerente(void *arg)
 
     do
     {
+      pthread_mutex_lock(&lock_pedidos);
       input = getch();
       input_num = atoi(&input);
-      refresh();
-    } while (input_num <= 0 || input_num >= count(config->pedidos));
+      pthread_mutex_unlock(&lock_pedidos);
+    } while (input_num <= 0 || input_num >= count(lista));
     buffer[1] = input_num;
 
     switch (buffer[0])
     {
     case 1:
     {
-      mvprintw(10, 20, "Cozinheiro 1 selecionado");
-
-      ArgsThread *args = malloc(sizeof(ArgsThread));
-      args->lista_pedidos = config->pedidos;
-      args->num_pedido = buffer[1];
-      args->tela = config->tela_pedidos;
-
-      pthread_mutex_lock(&lock_cozinheiros[0]);
-      pthread_create(&cozinheiro_thread[0], NULL, cozinhar, args);
-      pthread_mutex_unlock(&lock_cozinheiros[0]);
+      pthread_mutex_lock(&lock_ordem[0]);
+      ordem[0] = buffer[1];
+      pthread_mutex_unlock(&lock_ordem[0]);
     }
     break;
     case 2:
     {
-      mvprintw(10, 20, "Cozinheiro 2 selecionado");
-
-      ArgsThread *args = malloc(sizeof(ArgsThread));
-      args->lista_pedidos = config->pedidos;
-      args->num_pedido = buffer[1];
-      args->tela = config->tela_pedidos;
-
-      pthread_mutex_lock(&lock_cozinheiros[1]);
-      pthread_create(&cozinheiro_thread[1], NULL, cozinhar, args);
-      pthread_mutex_unlock(&lock_cozinheiros[1]);
+      pthread_mutex_lock(&lock_ordem[1]);
+      ordem[1] = buffer[1];
+      pthread_mutex_unlock(&lock_ordem[1]);
     }
-    break;
     case 3:
     {
-      mvprintw(10, 20, "Cozinheiro 3 selecionado");
-
-      ArgsThread *args = malloc(sizeof(ArgsThread));
-      args->lista_pedidos = config->pedidos;
-      args->num_pedido = buffer[1];
-      args->tela = config->tela_pedidos;
-
-      pthread_mutex_lock(&lock_cozinheiros[2]);
-      pthread_create(&cozinheiro_thread[2], NULL, cozinhar, args);
-      pthread_mutex_unlock(&lock_cozinheiros[2]);
+      pthread_mutex_lock(&lock_ordem[2]);
+      ordem[2] = buffer[1];
+      pthread_mutex_unlock(&lock_ordem[2]);
     }
     break;
     }
-
-    free(cozinheiro_thread);
-    free(lock_cozinheiros);
 
     return NULL;
   }
@@ -220,10 +203,9 @@ void *adiciona_pedidos(void *arg)
 {
   sleep(2);
   struct Configuracao *config = (struct Configuracao *)arg;
-  No *lista = config->pedidos;
-
   while (1)
   {
+    pthread_mutex_lock(&lock_pedidos);
     if (count(lista) < 28)
     {
       int pedido = (rand() % 5) + 1;
@@ -247,8 +229,6 @@ void *adiciona_pedidos(void *arg)
       default:
         break;
       }
-      pthread_mutex_lock(&lock_pedidos);
-      config->pedidos = lista;
       pthread_mutex_unlock(&lock_pedidos);
 
       refresh();
@@ -308,7 +288,9 @@ void *interface(void *configuracao)
   {
     cria_cozinha(i);
   }
-  lista_pedidos(config->tela_pedidos, config->pedidos);
+  pthread_mutex_lock(&lock_pedidos);
+  lista_pedidos(config->tela_pedidos, lista);
+  pthread_mutex_unlock(&lock_pedidos);
 
   refresh();
 
@@ -359,7 +341,15 @@ int main()
 
   configuracao.tela_pedidos = newwin(30, 20, 2, 2);
 
-  pthread_t thread_tela, thread_temporizador, thread_add_pedidos, thread_gerente;
+  pthread_t thread_tela, thread_temporizador, thread_add_pedidos, thread_gerente, thread_cozinheiro[3];
+
+  for (int i = 0; i < qtd_cozinheiros; i++)
+  {
+    Cozinheiro *cozinheiro = (Cozinheiro *)malloc(sizeof(Cozinheiro));
+    cozinheiro->id_cozinheiro = i;
+    cozinheiro->tela = configuracao.tela_pedidos; // para ser capaz de atualizar a tela de pedidos
+    pthread_create(&thread_cozinheiro[i], NULL, cozinheiros, (void *)&cozinheiro);
+  }
 
   pthread_create(&thread_tela, NULL, interface, (void *)&configuracao);
   pthread_create(&thread_temporizador, NULL, temporizador, NULL);

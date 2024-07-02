@@ -25,6 +25,6 @@ No *inserir(No *lista, char pedido[], int tempo_bancada, int tempo_cozinha, int 
 int count(No *lista);
 
 // Função para remover um item da lista
-No *remover(No *lista, char pedido[]);
+No *remover(No *lista, int indice_pedido);
 
 #endif //

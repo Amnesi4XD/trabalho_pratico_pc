@@ -74,7 +74,7 @@ void cria_cozinha(int num_cozinha)
     int X = 35 + (num_cozinha - 1) * largura;
     int alturaTela, larguraTela;
     getmaxyx(stdscr, alturaTela, larguraTela);
-    int Y = alturaTela - 23;
+    int Y = alturaTela - 13;
 
     mvhline(Y, X, 0, largura);
     mvhline(Y + altura - 1, X, 0, largura);
